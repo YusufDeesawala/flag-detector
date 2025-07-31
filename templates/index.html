@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flag Detector</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #2d1b69 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .glow-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 
+                0 10px 20px rgba(102, 126, 234, 0.3),
+                0 0 20px rgba(102, 126, 234, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .glow-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
+        }
+        
+        .glow-button:hover::before {
+            left: 100%;
+        }
+        
+        .glow-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 15px 30px rgba(102, 126, 234, 0.4),
+                0 0 30px rgba(102, 126, 234, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        
+        .custom-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: #e2e8f0;
+        }
+        
+        .custom-select:focus {
+            border-color: rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+        
+        .result-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .floating-orb {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+            filter: blur(60px);
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        .floating-orb:nth-child(1) {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .floating-orb:nth-child(2) {
+            width: 150px;
+            height: 150px;
+            top: 60%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+        
+        .floating-orb:nth-child(3) {
+            width: 100px;
+            height: 100px;
+            bottom: 20%;
+            left: 30%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .flag-icon {
+            font-size: 4rem;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+        }
+        
+        .title-glow {
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(226, 232, 240, 0.3);
+        }
+        
+        pre {
+            color: #94a3b8;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        
+        .json-key { color: #8b5cf6; }
+        .json-string { color: #10b981; }
+        .json-number { color: #f59e0b; }
+        .json-boolean { color: #ef4444; }
+        
+        .selected-flag {
+            font-size: 3rem;
+            margin: 1rem 0;
+            text-align: center;
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <!-- Floating Orbs -->
+    <div class="floating-orb"></div>
+    <div class="floating-orb"></div>
+    <div class="floating-orb"></div>
+    
+    <div class="glass-card p-8 rounded-3xl w-full max-w-lg relative z-10">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="flag-icon mb-4">🌎</div>
+            <h1 class="text-4xl font-bold title-glow mb-2">Flag Detector</h1>
+            <p class="text-slate-400 text-sm">Identify any country flag using AI</p>
+        </div>
+        
+        <!-- Flag Selector -->
+        <div class="mb-6">
+            <label for="flagSelector" class="block text-slate-300 text-sm font-medium mb-3">
+                Choose a flag to identify
+            </label>
+            <select id="flagSelector" class="custom-select w-full p-4 rounded-2xl text-base transition-all duration-300 hover:bg-white/10">
+                <option value="">🌍 Select a flag...</option>
+                {% for flag in flags %}
+                    <option value="{{ flag }}">{{ flag }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Selected Flag Display -->
+        <div id="selectedFlagDisplay" class="selected-flag hidden"></div>
+
+        <!-- Detect Button -->
+        <button id="detectButton" class="glow-button w-full py-4 px-6 rounded-2xl text-white font-semibold text-lg transition-all duration-300 relative overflow-hidden">
+            <span class="relative z-10 flex items-center justify-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                Detect Flag
+            </span>
+        </button>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden mt-6 text-center">
+            <div class="inline-flex items-center px-4 py-2 text-slate-300">
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Analyzing with AI...
+            </div>
+        </div>
+
+        <!-- Result Display -->
+        <div id="result" class="hidden mt-6 slide-in">
+            <div class="result-card p-6 rounded-2xl">
+                <div class="flex items-center mb-4">
+                    <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse mr-3"></div>
+                    <h2 class="text-xl font-semibold text-slate-200">Detection Result</h2>
+                </div>
+                <div class="bg-black/30 rounded-xl p-4 border border-white/10">
+                    <pre id="resultContent" class="text-sm leading-relaxed whitespace-pre-wrap overflow-x-auto"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function syntaxHighlight(json) {
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return json.replace(/("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                let cls = 'json-number';
+                if (/^"/.test(match)) {
+                    if (/:$/.test(match)) {
+                        cls = 'json-key';
+                    } else {
+                        cls = 'json-string';
+                    }
+                } else if (/true|false/.test(match)) {
+                    cls = 'json-boolean';
+                } else if (/null/.test(match)) {
+                    cls = 'json-null';
+                }
+                return '<span class="' + cls + '">' + match + '</span>';
+            });
+        }
+
+        // Show selected flag
+        document.getElementById('flagSelector').addEventListener('change', function() {
+            const selectedFlag = this.value;
+            const flagDisplay = document.getElementById('selectedFlagDisplay');
+            
+            if (selectedFlag) {
+                flagDisplay.textContent = selectedFlag;
+                flagDisplay.classList.remove('hidden');
+            } else {
+                flagDisplay.classList.add('hidden');
+            }
+        });
+
+        document.getElementById('detectButton').addEventListener('click', async () => {
+            const flag = document.getElementById('flagSelector').value;
+            const resultDiv = document.getElementById('result');
+            const resultContent = document.getElementById('resultContent');
+            const loading = document.getElementById('loading');
+            const button = document.getElementById('detectButton');
+
+            if (!flag) {
+                // Enhanced alert with animation
+                const selector = document.getElementById('flagSelector');
+                selector.style.borderColor = '#ef4444';
+                selector.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                setTimeout(() => {
+                    selector.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    selector.style.boxShadow = 'none';
+                }, 2000);
+                return;
+            }
+
+            // Show loading state
+            loading.classList.remove('hidden');
+            button.disabled = true;
+            button.classList.add('opacity-75');
+            resultDiv.classList.add('hidden');
+
+            try {
+                const response = await fetch('/detect_flag', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ flag })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    try {
+                        // Try to parse as JSON for syntax highlighting
+                        const jsonData = JSON.parse(data.data);
+                        const formattedData = JSON.stringify(jsonData, null, 2);
+                        resultContent.innerHTML = syntaxHighlight(formattedData);
+                    } catch (e) {
+                        // If not JSON, display as plain text
+                        resultContent.textContent = data.data;
+                    }
+                    resultDiv.classList.remove('hidden');
+                    resultDiv.classList.add('slide-in');
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                resultContent.innerHTML = `<span class="text-red-400">Error: ${error.message}</span>`;
+                resultDiv.classList.remove('hidden');
+            } finally {
+                loading.classList.add('hidden');
+                button.disabled = false;
+                button.classList.remove('opacity-75');
+            }
+        });
+
+        // Add subtle floating animation to the main card
+        const card = document.querySelector('.glass-card');
+        let mouseX = 0, mouseY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX - window.innerWidth / 2) / 50;
+            mouseY = (e.clientY - window.innerHeight / 2) / 50;
+        });
+        
+        function animateCard() {
+            card.style.transform = `translateX(${mouseX}px) translateY(${mouseY}px) rotateX(${mouseY * 0.1}deg) rotateY(${mouseX * 0.1}deg)`;
+            requestAnimationFrame(animateCard);
+        }
+        
+        animateCard();
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+                document.getElementById('detectButton').click();
+            }
+        });
+    </script>
+</body>
+</html>
